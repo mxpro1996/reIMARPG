@@ -9,7 +9,15 @@ import os
     Anything has its principle, after endless analysis on JADX, the game's opcode-dispatcher will see this table to get argCount.
     Maybe not useful for newer IMARPG, like version-3.
 /* renamed from: d */
-public static final int[] scriptPool = {7, 0, 0, 5, 4, 3, 2, 6, 3, 1, 3, 2, 4, 4, 1, 0, 8, 3, 3, 2, 3, 3, 0, 0, 2, 2, 4, 4, 1, 3, 6, 5, 2, 5, 3, 3, 1, 3, 3, 3, 2, 7, 7, 5, 7, 7, 0, 1, 3, 4, 3, 3, 2, 5, 3, 2, 1, 3, 2, 2, 5, 1, 5, 4, 1, 2, 5, 2, 2, 1, 0, 2, 3, 4, 4, 1};
+public static final int[] scriptPool = {7, 0, 0, 5, 4, 3, 2, 6, 3, 1, 3, 
+                                        2, 4, 4, 1, 0, 8, 3, 3, 2, 3, 3, 
+                                        0, 0, 2, 2, 4, 4, 1, 3, 6, 5, 2, 
+                                        5, 3, 3, 1, 3, 3, 3, 2, 7, 7, 5, 
+                                        7, 7, 0, 1, 3, 4, 3, 3, 2, 5, 3, 
+                                        2, 1, 3, 2, 2, 5, 1, 5, 4, 1, 2, 
+                                        5, 2, 2, 1, 0, 2, 3, 4, 4, 1};
+it's obvious that some counts doesn't match, owing to curious region,
+or just I don't know how to handle alignment or barrier, so we'd better to think twice.
 """
 OPCODE_ARG_COUNTS = {
     0:7,  1:0,  2:0,  3:5,  4:4,  5:3,  6:2,  7:6,  8:3,  9:1,  10:3,
