@@ -1,6 +1,8 @@
 # reIMAPRG
-For conclude the analysis at IMARPG (Version: 21)
+For conclude the analysis at IMARPG (Version: 21) \
+In the long term, to consider recover the implementation of engine.
 
+## Pack Extract
 | Name | Function | Methods |
 | --- | --- | --- |
 | **`battle.pak`** | battle | TBD |
