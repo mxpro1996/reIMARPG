@@ -155,37 +155,92 @@ def parse_script_bin(data, scene_id):
         
     return "\n".join(out_lines)
 
-def main():
-    pak_file = "script.pak"
-    out_dir = "script_out"
+def encode_leb128(val):
+    buf = bytearray()
+    while True:
+        b = val & 0x7F
+        val >>= 7
+        if val != 0:
+            b |= 0x80
+            buf.append(b)
+        else:
+            buf.append(b)
+            break
+    return buf    
     
-    if not os.path.exists(pak_file):
-        print(f"Error: {pak_file} not found in the current directory.")
+def repack_pak(out_dir, target_pak_file):
+    bin_files = sorted(
+        [f for f in os.listdir(out_dir) if f.startswith("scene_") and f.endswith(".bin")],
+        key=lambda x: int(x.split("_")[1].split(".")[0])
+    )
+    
+    if not bin_files:
+        print(f"Error: No scene_X.bin found in {out_dir}.")
         return
-        
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
-        
-    print(f"Unpacking {pak_file}...")
-    sub_files = unpack_pak(pak_file)
-    print(f"Found {len(sub_files)} scripts in {pak_file}.")
+
+    buf = bytearray()
     
-    for i, data in enumerate(sub_files):
-        bin_path = os.path.join(out_dir, f"scene_{i}.bin")
-        txt_path = os.path.join(out_dir, f"scene_{i}.txt")
+    # 1. Modify the pakBlockCnt (u8)
+    buf.extend(struct.pack(">B", len(bin_files)))
+    
+    # 2. foreach the LEB128-size && RawData
+    sub_files_data = []
+    for bf in bin_files:
+        with open(os.path.join(out_dir, bf), "rb") as f:
+            sub_files_data.append(f.read())
+    for data in sub_files_data:
+        buf.extend(encode_leb128(len(data)))
+    for data in sub_files_data:
+        buf.extend(data)
         
-        # dump the bare-raw as bin, too
+    with open(target_pak_file, "wb") as f:
+        f.write(buf)
+        
+    print(f"[✓] Repacked {len(bin_files)} scenes into {target_pak_file}")
+ 
+
+
+def main():
+    parser = argparse.ArgumentParser(description="IMAPRG21 PAK Unpacker & Repacker Tool")
+    parser.add_argument("-i", "--input", default="script.pak", help="Path to input PAK file (default: script.pak)")
+    parser.add_argument("-o", "--out-dir", default="script_out", help="Directory for extracted scene files (default: script_out)")
+    parser.add_argument("-r", "--repack", metavar="TARGET_PAK", help="Repack mode: Pack binary files from out-dir back into target PAK file")
+    
+    args = parser.parse_parse_args() if hasattr(parser, 'parse_parse_args') else parser.parse_args()
+    # isRepack mode?
+    if args.repack:
+        print(f"Repacking scripts from '{args.out_dir}' into '{args.repack}'...")
+        repack_pak(args.out_dir, args.repack)
+        return
+
+    if not os.path.exists(args.input):
+        print(f"Error: {args.input} not found.")
+        return
+
+    if not os.path.exists(args.out_dir):
+        os.makedirs(args.out_dir)
+
+    print(f"Unpacking {args.input}...")
+    sub_files = unpack_pak(args.input)
+    print(f"Found {len(sub_files)} scripts in {args.input}.")
+
+    for i, data in enumerate(sub_files):
+        bin_path = os.path.join(args.out_dir, f"scene_{i}.bin")
+        txt_path = os.path.join(args.out_dir, f"scene_{i}.txt")
+
+        # dump the bare-raw as bin
         with open(bin_path, "wb") as f:
             f.write(data)
-            
+
         # deserialized as text
         try:
             parsed_text = parse_script_bin(data, i)
             with open(txt_path, "w", encoding="utf-8") as f:
                 f.write(parsed_text)
-            print(f"  -> Extracted and parsed Scene {i}")
+            print(f"\r  -> Extracted and parsed Scene {i}", end="", flush=True)
         except Exception as e:
             print(f"  -> [!] Error parsing Scene {i}: {e}")
 
 if __name__ == "__main__":
     main()
+
